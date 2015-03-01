@@ -34,7 +34,7 @@ var scalarTypeFunction = function(type) {
 var jsonSchemaTypeMap = {
   // 'A JSON array.'
   'array': function(array) {
-    return 'ARRAY';
+    return 'Array<' + jsonSchemaToFlowObject(array.items) + '>';
   },
   // 'A JSON object.'
   'object': function(object) {

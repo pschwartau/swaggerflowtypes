@@ -98,7 +98,7 @@ var options = cli.parse();
 if (options.help) {
   var usage = cli.getUsage({
     header: 'Flow type aliases from Swagger API JSON.',
-    footer: 'For more information, visit https://github.com/jackphel/swaggerFlowTypes'
+    footer: 'For more information, visit https://github.com/jackphel/swaggerflowtypes'
   });
   console.log(usage);
 } else {

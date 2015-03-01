@@ -1,5 +1,5 @@
 {
-  "name": "swaggerFlowTypes",
+  "name": "swaggerflowtypes",
   "version": "1.0.0",
   "description": "Turn a swagger API's models into types for the flow typechecker.",
   "main": "makeTypes.js",
@@ -8,7 +8,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/jackphel/swaggerFlowTypes.git"
+    "url": "https://github.com/jackphel/swaggerflowtypes.git"
   },
   "keywords": [
     "facebook",
@@ -18,9 +18,9 @@
   "author": "jackphel@gmail.com",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/jackphel/swaggerFlowTypes/issues"
+    "url": "https://github.com/jackphel/swaggerflowtypes/issues"
   },
-  "homepage": "https://github.com/jackphel/swaggerFlowTypes",
+  "homepage": "https://github.com/jackphel/swaggerflowtypes",
   "dependencies": {
     "command-line-args": "^0.5.5",
     "q": "^1.2.0",

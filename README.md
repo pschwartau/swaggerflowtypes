@@ -2,6 +2,8 @@ take the [models](https://github.com/swagger-api/swagger-core/wiki/Annotations#a
 
 **usage:**
 
+just invoke `swaggerflowtypes <the url to your api-docs json`
+
 ```
 $ > npm install -g swaggerflowtypes
 $ > swaggerflowtypes http://192.168.59.103/api-docs

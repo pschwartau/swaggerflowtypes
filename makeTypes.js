@@ -1,3 +1,4 @@
+#! /usr/bin/env node
 var cliArgs = require('command-line-args');
 var request = require('request');
 var _ = require('underscore');

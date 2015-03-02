@@ -1,4 +1,4 @@
-take the [models](https://github.com/swagger-api/swagger-core/wiki/Annotations#apimodel) from your [swagger api](https://github.com/swagger-api/swagger-spec) and create [type aliases](http://flowtype.org/docs/objects.html#reusable-object-types) for the [facebook flow typechecker](http://flowtype.org/docs/getting-started.html#_)
+take the [models](https://github.com/swagger-api/swagger-core/wiki/Annotations#apimodel) from your [swagger api](https://github.com/swagger-api/swagger-spec) and create [class definitions](http://flowtype.org/docs/classes.html#_) for the [facebook flow typechecker](http://flowtype.org/docs/getting-started.html#_)
 
 **usage:**
 
@@ -12,6 +12,7 @@ wrote to types/Device.js
 ```
 
 Currently because of [this issue](https://github.com/facebook/flow/issues/16)
+this outputs class definitions instead of [type aliases](http://flowtype.org/docs/objects.html#reusable-object-types)
 in order to import these types in your code, you have to require the file for the type as follows.
 
 ` var User = require('./types/User'); `

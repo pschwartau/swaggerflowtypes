@@ -34,7 +34,7 @@ var scalarTypeFunction = function(type) {
 };
 
 // maps schema type to a function that takes a schema
-// and returns the string type alias for the schema.
+// and returns the string type for the schema.
 var jsonSchemaTypeMap = {
   // 'A JSON array.'
   'array': function(array) {
@@ -47,7 +47,7 @@ var jsonSchemaTypeMap = {
       .map(function(value, key) {
         return [key, jsonSchemaToFlowObject(value)];
       })
-      .object());
+      .object()).replace(/,/g, ';');
   },
   'boolean': scalarTypeFunction('boolean'),
   'integer': scalarTypeFunction('number'),
@@ -56,7 +56,7 @@ var jsonSchemaTypeMap = {
   'string': scalarTypeFunction('string')
 };
 
-// returns the string type alias for the given schema;
+// returns the string type for the given schema;
 var jsonSchemaToFlowObject = function(schema) {
   if (!jsonSchemaTypeMap[schema.type]) {
     console.log('invalid schema:' + JSON.stringify(schema));
@@ -74,26 +74,27 @@ var outputAPI = function(modelSets) {
         .values()
         .map(function(model) {
           // now we're dealing with the actual model
-          var typeAliasObject = _(model.properties)
+          var typeObject = _(model.properties)
             .chain()
             .map(function(schema, key) {
               return [key, jsonSchemaToFlowObject(schema)];
             })
             .object()
             .value();
-          var typeAlias = JSON.stringify(typeAliasObject)
+          var classDefinition = JSON.stringify(typeObject)
             .replace(/"/g, '')
             .replace(/:/g, ': ')
-            .replace(/,/g, '; ');
-          return 'type ' + model.id + ' = ' + typeAlias + ';';
+            .replace(/,/g, '; ')
+            .replace(/}/, ';}');
+          return 'class ' + model.id + ' ' + classDefinition;
         })
         .value();
     })
     .flatten()
     .each(function(typeBody) {
-      var typeName = typeBody.replace(/^.*type /, '').replace(/ =.*$/, '');
+      var typeName = typeBody.replace(/^.*class /, '').replace(/ {.*$/, '');
       var outPath = path.join(options.output, typeName + '.js');
-      var outputBody = '/* @flow */\n' + 'var ' + typeName + ';\n' + typeBody + '\nmodule.exports = ' + typeName + ';\n';
+      var outputBody = '/* @flow */\n' + typeBody + '\nmodule.exports = ' + typeName + ';\n';
       fs.writeFileSync(outPath, outputBody);
       console.log('wrote to ' + outPath);
     })
@@ -111,7 +112,7 @@ var options = cli.parse();
 
 if (options.help) {
   var usage = cli.getUsage({
-    header: 'Flow type aliases from Swagger API JSON.',
+    header: 'Flow type class definitions from Swagger API JSON.',
     footer: 'For more information, visit https://github.com/jackphel/swaggerflowtypes'
   });
   console.log(usage);

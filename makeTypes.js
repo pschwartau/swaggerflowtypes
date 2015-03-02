@@ -79,12 +79,13 @@ var outputAPI = function(modelSets) {
         var typeAlias = JSON.stringify(typeAliasObject)
           .replace(/"/g, '')
           .replace(/:/g, ': ')
-          .replace(/,/g, ', ');
+          .replace(/,/g, '; ');
         return 'type ' + model.id + ' = ' + typeAlias + ';';
       })
       .value()
       .join('\n');
   }).join('\n');
+  console.log('/* @flow */');
   console.log(models);
 };
 

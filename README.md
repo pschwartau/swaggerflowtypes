@@ -2,12 +2,21 @@ take the [models](https://github.com/swagger-api/swagger-core/wiki/Annotations#a
 
 **usage:**
 
-just invoke `swaggerflowtypes <the url to your api-docs json`
+just invoke `swaggerflowtypes -o <output_dir> <the_url_to_your_api-docs_json>`
 
 ```
 $ > npm install -g swaggerflowtypes
-$ > swaggerflowtypes http://192.168.59.103/api-docs
-type User = {id: string, name: string};
-type Device = {id: string, user_ID: string, phoneNumber: string};
+$ > swaggerflowtypes -o types http://`boot2docker ip`/api-docs
+wrote to types/User.js
+wrote to types/Device.js
 ```
+
+Currently because of [this issue]('https://github.com/facebook/flow/issues/16')
+in order to import these types in your code, you have to require the file for the type as follows.
+
+` var User = require('./types/User'); `
+
+Then you can refer to the type normally eg:
+
+`foo(user: User): void`
 

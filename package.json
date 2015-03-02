@@ -1,6 +1,6 @@
 {
   "name": "swaggerflowtypes",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Turn a swagger API's models into types for the flow typechecker.",
   "main": "makeTypes.js",
   "scripts": {

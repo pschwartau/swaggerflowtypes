@@ -1,8 +1,11 @@
 #! /usr/bin/env node
-var cliArgs = require('command-line-args');
-var request = require('request');
-var _ = require('underscore');
+
 var Q = require('q');
+var _ = require('underscore');
+var cliArgs = require('command-line-args');
+var fs = require('fs');
+var path = require('path');
+var request = require('request');
 
 
 
@@ -63,35 +66,44 @@ var jsonSchemaToFlowObject = function(schema) {
 };
 
 var outputAPI = function(modelSets) {
-  var models = _(modelSets).map(function(modelSet) {
-    return _(modelSet)
-      .chain()
-      .values()
-      .map(function(model) {
-        // now we're dealing with the actual model
-        var typeAliasObject = _(model.properties)
-          .chain()
-          .map(function(schema, key) {
-            return [key, jsonSchemaToFlowObject(schema)];
-          })
-          .object()
-          .value();
-        var typeAlias = JSON.stringify(typeAliasObject)
-          .replace(/"/g, '')
-          .replace(/:/g, ': ')
-          .replace(/,/g, '; ');
-        return 'type ' + model.id + ' = ' + typeAlias + ';';
-      })
-      .value()
-      .join('\n');
-  }).join('\n');
-  console.log('/* @flow */');
-  console.log(models);
+  var models = _(modelSets)
+    .chain()
+    .map(function(modelSet) {
+      return _(modelSet)
+        .chain()
+        .values()
+        .map(function(model) {
+          // now we're dealing with the actual model
+          var typeAliasObject = _(model.properties)
+            .chain()
+            .map(function(schema, key) {
+              return [key, jsonSchemaToFlowObject(schema)];
+            })
+            .object()
+            .value();
+          var typeAlias = JSON.stringify(typeAliasObject)
+            .replace(/"/g, '')
+            .replace(/:/g, ': ')
+            .replace(/,/g, '; ');
+          return 'type ' + model.id + ' = ' + typeAlias + ';';
+        })
+        .value();
+    })
+    .flatten()
+    .each(function(typeBody) {
+      var typeName = typeBody.replace(/^.*type /, '').replace(/ =.*$/, '');
+      var outPath = path.join(options.output, typeName + '.js');
+      var outputBody = '/* @flow */\n' + 'var ' + typeName + ';\n' + typeBody + '\nmodule.exports = ' + typeName + ';\n';
+      fs.writeFileSync(outPath, outputBody);
+      console.log('wrote to ' + outPath);
+    })
+    .value();
 };
 
 /* define the command-line options */
 var cli = cliArgs([
   { name: 'swaggerUrl', type: String, defaultOption: true, description: 'url of your swagger api docs' },
+  { name: 'output', type: String, alias: 'o', description: 'directory to place output files' },
   { name: 'help', type: Boolean, description: 'Print usage instructions' },
 ]);
 

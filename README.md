@@ -11,7 +11,7 @@ wrote to types/User.js
 wrote to types/Device.js
 ```
 
-Currently because of [this issue]('https://github.com/facebook/flow/issues/16')
+Currently because of [this issue](https://github.com/facebook/flow/issues/16)
 in order to import these types in your code, you have to require the file for the type as follows.
 
 ` var User = require('./types/User'); `

@@ -2,6 +2,8 @@
 
 var Q = require('q');
 var _ = require('underscore');
+_.mixin(require('underscore.deep'));
+
 var cliArgs = require('command-line-args');
 var fs = require('fs');
 var path = require('path');
@@ -57,7 +59,17 @@ var jsonSchemaTypeMap = {
 };
 
 // returns the string type for the given schema;
-var jsonSchemaToFlowObject = function(schema) {
+var jsonSchemaToFlowObject = function(schema, possibleImports) {
+  // return ref if it's used and ok
+  if ('$ref' in schema) {
+    if (_(possibleImports).contains(schema.$ref)) {
+      return schema.$ref;
+    } else {
+      console.log('invalid schema:' + JSON.stringify(schema), 'no such type available: ' + schema.$ref);
+      return 'any';
+    }
+  }
+  // otherwise serialize type
   if (!jsonSchemaTypeMap[schema.type]) {
     console.log('invalid schema:' + JSON.stringify(schema));
   }
@@ -66,6 +78,15 @@ var jsonSchemaToFlowObject = function(schema) {
 };
 
 var outputAPI = function(modelSets) {
+
+  var possibleImports = _(modelSets)
+    .chain()
+    .map(function(modelSet) {
+      return _(modelSet).map(function(value, key) { return key; });
+    })
+    .flatten()
+    .value();
+
   var models = _(modelSets)
     .chain()
     .map(function(modelSet) {
@@ -77,7 +98,7 @@ var outputAPI = function(modelSets) {
           var typeObject = _(model.properties)
             .chain()
             .map(function(schema, key) {
-              return [key, jsonSchemaToFlowObject(schema)];
+              return [key, jsonSchemaToFlowObject(schema, possibleImports)];
             })
             .object()
             .value();
@@ -86,13 +107,28 @@ var outputAPI = function(modelSets) {
             .replace(/:/g, ': ')
             .replace(/,/g, '; ')
             .replace(/}/, ';}');
-          return 'class ' + model.id + ' ' + classDefinition;
+          var imports = _(_.deepToFlat(model))
+            .chain()
+            .filter(function(value, key) {
+              return /\$ref$/.test(key) &&
+                _(possibleImports).contains(value);
+            })
+            .map(function(name) {
+              return 'var ' + name + " = require('./" + name + "');\n";
+            })
+            .unique()
+            .value()
+            .join('');
+            console.log(imports);
+
+          console.log(imports + '\nclass ' + model.id + ' ' + classDefinition);
+          return imports + '\nclass ' + model.id + ' ' + classDefinition;
         })
         .value();
     })
     .flatten()
     .each(function(typeBody) {
-      var typeName = typeBody.replace(/^.*class /, '').replace(/ {.*$/, '');
+      var typeName = typeBody.match(/class ([^ ]*) {/)[1];
       var outPath = path.join(options.output, typeName + '.js');
       var outputBody = '/* @flow */\n' + typeBody + '\nmodule.exports = ' + typeName + ';\n';
       fs.writeFileSync(outPath, outputBody);

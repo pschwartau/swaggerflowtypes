@@ -11,6 +11,47 @@ wrote to types/User.js
 wrote to types/Device.js
 ```
 
+**$refs**
+
+this tool will reference and import where necessary types from $ref attributes,
+assuming that the required model will remain where the tool puts it relative the referencing model.
+
+```
+...
+models: {
+  Subscription: {
+    id: "Subscription",
+    description: "",
+    properties: {
+      id: {
+        type: "number",
+      },
+      user: {
+        $ref: "User"
+      }
+    }
+  }
+...
+```
+
+yields
+
+```
+/* @flow */
+var User = require('./User');
+
+class Subscription {id: number; user: User;}
+module.exports = Subscription;
+```
+
+**jshint**
+
+you might want to set in your .jshintrc in the root of your project:
+
+```
+"unused"        : false,     // true: Require all defined variables be used
+```
+
 Currently because of [this issue](https://github.com/facebook/flow/issues/16)
 this outputs class definitions instead of [type aliases](http://flowtype.org/docs/objects.html#reusable-object-types)
 in order to import these types in your code, you have to require the file for the type as follows.

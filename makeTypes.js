@@ -119,9 +119,7 @@ var outputAPI = function(modelSets) {
             .unique()
             .value()
             .join('');
-            console.log(imports);
 
-          console.log(imports + '\nclass ' + model.id + ' ' + classDefinition);
           return imports + '\nclass ' + model.id + ' ' + classDefinition;
         })
         .value();

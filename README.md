@@ -11,6 +11,18 @@ wrote to types/User.js
 wrote to types/Device.js
 ```
 
+Currently because of [this issue](https://github.com/facebook/flow/issues/16)
+this outputs class definitions instead of [type aliases](http://flowtype.org/docs/objects.html#reusable-object-types)
+
+in order to import these types in your code, you have to require the file for the type as follows.
+
+` var User = require('./types/User'); `
+
+Then you can refer to the type normally eg:
+
+`foo(user: User): void`
+
+
 **$refs**
 
 this tool will reference and import where necessary types from $ref attributes,
@@ -51,14 +63,4 @@ you might want to set in your .jshintrc in the root of your project:
 ```
 "unused"        : false,     // true: Require all defined variables be used
 ```
-
-Currently because of [this issue](https://github.com/facebook/flow/issues/16)
-this outputs class definitions instead of [type aliases](http://flowtype.org/docs/objects.html#reusable-object-types)
-in order to import these types in your code, you have to require the file for the type as follows.
-
-` var User = require('./types/User'); `
-
-Then you can refer to the type normally eg:
-
-`foo(user: User): void`
 

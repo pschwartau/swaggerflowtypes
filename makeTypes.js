@@ -22,12 +22,11 @@ var get = function(url, dataCallback) {
 };
 
 var getAPIModels = function(apiJson) {
-  return Q.all(_(apiJson.apis).map(function(api) {
-    var deferred = Q.defer();
-    get(options.swaggerUrl + api.path, function(data) {
-      deferred.resolve(data.models);
-    });
-    return deferred.promise;
+  return Q.all(_(apiJson.definitions).mapObject(function(apiDef, apiName) {
+    var o = {};
+    o[apiName] = apiDef;
+    apiDef.id = apiName;
+    return o;
   }));
 };
 
@@ -39,17 +38,25 @@ var scalarTypeFunction = function(type) {
 // and returns the string type for the schema.
 var jsonSchemaTypeMap = {
   // 'A JSON array.'
-  'array': function(array) {
-    return 'Array<' + jsonSchemaToFlowObject(array.items) + '>';
+  'array': function(array, possibleImports) {
+    return 'Array<' + jsonSchemaToFlowObject(array.items, possibleImports) + '>';
   },
   // 'A JSON object.'
-  'object': function(object) {
-    return JSON.stringify(_(object.properties)
+  'object': function(object, possibleImports) {
+    return _(object.additionalProperties, possibleImports)
       .chain()
       .map(function(value, key) {
-        return [key, jsonSchemaToFlowObject(value)];
+        if (key === 'type') {
+          // special handling for string-to-value mapping
+          return ['[key: string]', jsonSchemaTypeMap[value]];
+        } else if (key === '$ref' && isModelRef(value)) {
+          return ['[key: string]', extractModelNameFromRef(value)];
+        } else {
+          console.error( "don't know how to handle object with additionalProperties key '" + key + "'.");
+          throw "don't know how to handle object with additionalProperties key '" + key + "'."
+        }
       })
-      .object()).replace(/,/g, ';');
+      .object();
   },
   'boolean': scalarTypeFunction('boolean'),
   'integer': scalarTypeFunction('number'),
@@ -58,12 +65,21 @@ var jsonSchemaTypeMap = {
   'string': scalarTypeFunction('string')
 };
 
+var isModelRef = function(ref) {
+  return ref.startsWith('#/definitions/')
+};
+
+var extractModelNameFromRef = function(ref) {
+  return ref.substring(14);
+};
+
 // returns the string type for the given schema;
 var jsonSchemaToFlowObject = function(schema, possibleImports) {
   // return ref if it's used and ok
-  if ('$ref' in schema) {
-    if (_(possibleImports).contains(schema.$ref)) {
-      return schema.$ref;
+  if ('$ref' in schema && isModelRef(schema.$ref)) {
+    var modelName = extractModelNameFromRef(schema.$ref);
+    if (_(possibleImports).contains(modelName)) {
+      return modelName;
     } else {
       console.log('invalid schema:' + JSON.stringify(schema), 'no such type available: ' + schema.$ref);
       return 'any';
@@ -74,7 +90,7 @@ var jsonSchemaToFlowObject = function(schema, possibleImports) {
     console.log('invalid schema:' + JSON.stringify(schema));
   }
 
-  return jsonSchemaTypeMap[schema.type](schema);
+  return jsonSchemaTypeMap[schema.type](schema, possibleImports);
 };
 
 var outputAPI = function(modelSets) {
@@ -87,6 +103,8 @@ var outputAPI = function(modelSets) {
     .flatten()
     .value();
 
+  var counter = 0;
+
   var models = _(modelSets)
     .chain()
     .map(function(modelSet) {
@@ -94,6 +112,7 @@ var outputAPI = function(modelSets) {
         .chain()
         .values()
         .map(function(model) {
+          //console.info( 'model: ', model );
           // now we're dealing with the actual model
           var typeObject = _(model.properties)
             .chain()
@@ -102,19 +121,26 @@ var outputAPI = function(modelSets) {
             })
             .object()
             .value();
+          if (model.id == 'BettyArticle') {
+            console.log('now dealing with BettyArticle');
+            console.info( 'typeObject %d %s: ', ++counter, model.id, typeObject );
+          }
           var classDefinition = JSON.stringify(typeObject)
-            .replace(/"/g, '')
+            .replace(/\{/, '{\n  ')
+            .replace(/,/g, ';\n  ')
             .replace(/:/g, ': ')
-            .replace(/,/g, '; ')
-            .replace(/}/, ';}');
+            .replace(/"/g, '')
+            .replace(/}$/g, ';\n}');
           var imports = _(_.deepToFlat(model))
             .chain()
             .filter(function(value, key) {
               return /\$ref$/.test(key) &&
-                _(possibleImports).contains(value);
+                  isModelRef(value) &&
+                  _(possibleImports).contains(extractModelNameFromRef(value));
             })
             .map(function(name) {
-              return 'var ' + name + " = require('./" + name + "');\n";
+              var modelName = isModelRef(name) ? extractModelNameFromRef(name) : name;
+              return 'var ' + modelName + " = require('./" + modelName + "');\n";
             })
             .unique()
             .value()
